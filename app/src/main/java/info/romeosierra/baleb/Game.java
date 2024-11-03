@@ -2,18 +2,19 @@ package info.romeosierra.baleb;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
-import info.romeosierra.baleb.math.Vec2f;
+import info.romeosierra.baleb.math.Vec2;
+import info.romeosierra.baleb.scene.SceneManager;
 
 public class Game extends GLSurfaceView {
     private Context context;
+    private SceneManager sceneManager;
     public RAGERenderer renderer;
     private String TAG = "RAGE- Game";
     private GameLoop gameLoop;
-    private Vec2f touchPosition;
+    private Vec2 touchPosition;
     private boolean isTouchEvent = false;
     public Game(Context context) {
         super(context);
@@ -29,8 +30,8 @@ public class Game extends GLSurfaceView {
         setRenderer(renderer);
         gameLoop = new GameLoop(this, surfaceHolder);
         setFocusable(true);
-        touchPosition = new Vec2f();
-        // Init ECS
+        touchPosition = new Vec2();
+        sceneManager = new SceneManager();
         gameLoop.startLoop();
     }
 
@@ -42,21 +43,17 @@ public class Game extends GLSurfaceView {
             final float normalizedY =
                     -((event.getY() / (float) renderer.getHeight()) * 2 - 1);
             switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN: {
-
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_MOVE: {
+                    touchPosition.setX(normalizedX);
+                    touchPosition.setY(normalizedY);
                     isTouchEvent = true;
                     return true;
                 }
                 case MotionEvent.ACTION_UP: {
-                    touchPosition.x = 0;
-                    touchPosition.y = 0;
+                    touchPosition.setX(0);
+                    touchPosition.setY(0);
                     isTouchEvent = false;
-                    return true;
-                }
-                case MotionEvent.ACTION_MOVE: {
-                    touchPosition.x = normalizedX;
-                    touchPosition.y = normalizedY;
-                    isTouchEvent = true;
                     return true;
                 }
 
@@ -66,9 +63,9 @@ public class Game extends GLSurfaceView {
     }
 
     void update(float dt) {
-        // ecs.setTouchPosition(touchPosition);
-        // ecs.setScreenDimensions(renderer.getWidth, renderer.getHeight());
-        // ecs.update(dt);
+        sceneManager.setTouchPosition(touchPosition, isTouchEvent);
+        sceneManager.setScreenDimensions(renderer.getWidth(), renderer.getHeight());
+        sceneManager.update(dt);
 
     }
     void render(int i) {

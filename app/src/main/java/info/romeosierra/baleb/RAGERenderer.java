@@ -22,6 +22,7 @@ public class RAGERenderer implements GLSurfaceView.Renderer {
     private int width, height;
     private int program = 0;
     private int aPositionLocation = 0;
+    private int aColorLocation = 0;
     private float[] projectionMatrix;
 
     public RAGERenderer(Context context) {
@@ -38,11 +39,13 @@ public class RAGERenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceCreated(GL10 unused, EGLConfig eglConfig) {
         Log.i(TAG, "Renderer constructed");
+        projectionMatrix = new float[16];
         GLES20.glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
         String vertexShaderSrc = ShaderUtils.getStringFromFile(context, R.raw.vertex_shader);
         String fragmentShaderSrc = ShaderUtils.getStringFromFile(context, R.raw.fragment_shader);
         program = ShaderUtils.getProgram(vertexShaderSrc, fragmentShaderSrc);
         aPositionLocation = GLES20.glGetAttribLocation(program, "a_position");
+        aColorLocation = GLES20.glGetAttribLocation(program, "a_color");
         Log.i(TAG, "Program:");
     }
 
@@ -58,9 +61,15 @@ public class RAGERenderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onDrawFrame(GL10 unused) {
+        GLES20.glClearColor((float) renderScene.backgroundColor.getR(),
+                (float) renderScene.backgroundColor.getG(),
+                (float) renderScene.backgroundColor.getB(),
+                (float) renderScene.backgroundColor.getA());
+        renderScene.addRenderObject();
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         float[] vertices = renderScene.getVertexArray();
         int[] indices = renderScene.getIndexArray();
+
 
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(vertices.length * Float.BYTES);
         byteBuffer.order(ByteOrder.nativeOrder());
@@ -77,7 +86,11 @@ public class RAGERenderer implements GLSurfaceView.Renderer {
         GLES20.glUseProgram(program);
 
         GLES20.glEnableVertexAttribArray(aPositionLocation);
-        GLES20.glVertexAttribPointer(aPositionLocation, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer);
+        GLES20.glVertexAttribPointer(aPositionLocation, 2, GLES20.GL_FLOAT, false, 6 * Float.BYTES, vertexBuffer);
+
+        GLES20.glEnableVertexAttribArray(aColorLocation);
+        GLES20.glVertexAttribPointer(aColorLocation, 4, GLES20.GL_FLOAT, false, 6 * Float.BYTES, vertexBuffer);
+
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, indices.length, GLES20.GL_UNSIGNED_INT, indicesBuffer);
 
     }
